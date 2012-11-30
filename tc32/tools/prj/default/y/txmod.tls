@@ -1,0 +1,17 @@
+//Script for setting all TX mod related bits
+
+//enable rx_cyc1, [2] to unmask the 4Mhz clock
+sub_bit_set(0x4e9, 2)
+
+#set mod_en
+sub_bit_set(0x4e8, 6)
+# set mod_trans_en
+sub_bit_set(0x4e8, 7)
+
+###########################
+#	set the SD path default deviation reg_dc_mod[16:0]
+#  Set the gain to all 17 ones to get 500Khz
+###########################
+sub_wr_ana(0xa7, 0xff, 7, 0) 
+sub_wr_ana(0xa6, 0xff, 7, 0) 
+sub_wr_ana(0xa5, 1, 7, 7) 

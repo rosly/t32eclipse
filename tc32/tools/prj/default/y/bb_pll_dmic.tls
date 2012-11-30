@@ -1,0 +1,5 @@
+print "enable DMIC Clock output\r\n"
+wr_reg (0x58e, 0x02, 1)
+print "Set DMIC Clock: 240M / 10 = 24M\r\n"
+wr_reg (0x6c, 0x0a81, 2)
+

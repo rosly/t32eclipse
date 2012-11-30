@@ -1,0 +1,31 @@
+sub sub_w3 (addr, d)
+	v = p_wr_reg (0xb8, addr, 1)	// analog register address
+	v = p_wr_reg (0xb9, d, 1)	// analog register address
+	v = p_wr_reg (0xba, 0x60, 1)	// analog register address
+endsub
+
+sub	dcoc_step (d)
+	wr_reg (0x426, 0x80, 1)
+	wr_reg (0x4cb, d, 1)
+	wr_reg (0x4cf, d, 1)
+	wr_reg (0x42f, 0x80, 1)
+	t = tick (1)
+	//while (tick (1) - t < 2)
+	//wend
+	rd_mem (0x42c, 0, 4)
+endsub
+	
+
+////////////////////////////////////////////
+//      get dc setting from (addr)
+////////////////////////////////////////////
+dc = p_get_adr (0, 1)
+for i=dc to dc 
+	dcoc_step (i)
+	dci = p_get_buf (0, 2)
+	dcq = p_get_buf (1, 2)
+	printx i, 1, '\t'
+	printx dci, 2, ' '
+	printx dcq, 2, ' '
+	print "\r\n"
+next i

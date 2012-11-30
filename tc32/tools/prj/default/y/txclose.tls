@@ -1,0 +1,107 @@
+////////////////////////////////////////////
+//      m/integer_N/fraction from freq
+////////////////////////////////////////////
+freq = p_get_size (0, 4)
+ref  = 16         // ref clock, default 16
+rdiv = 1          
+
+//Derive DPLL param
+m_mod = freq % ref // for dpll 
+m = (freq-m_mod) / ref /// for dpll
+
+fmul = freq*rdiv
+integer_N_mod = fmul % (2*ref)
+integer_N = (fmul - integer_N_mod) / (2*ref)
+imod = integer_N_mod*4194304
+imod_rem = imod%ref
+frac_in = (imod - imod_rem)/ref  
+
+//analog
+spi_wr_reg(0xa9, 0xa1) //tx voc prescaler current: 8uA
+spi_wr_reg(0x06, 0x06) //pd
+spi_wr_reg(0x9d, 0x16) //pfd_s1, pfss0
+spi_wr_reg(0x9f, 0x0c) //cp_ise1_intg
+spi_wr_reg(0xaa, 0x81) //pd_intg_pll
+spi_wr_reg(0xac, m) //m(pll_dpll)
+spi_wr_reg(0x01, 0x14) //digital ldo to 1.9v
+spi_wr_reg(0x02, 0x87) //change analog ldo to 1.6v
+spi_wr_reg(0xa5, 0x2f) //change mux to 7
+spi_wr_reg(0xa0, 0x02) //dpll_en 0
+spi_wr_reg(0xa0, 0x03) //dpll_en 1
+
+//gpio20 input enable
+v = wr_reg (0x5b2, 0x00, 1)
+v = wr_reg (0x58a, 0x00, 1)
+
+//frac_in
+v = wr_reg (0x4e4, frac_in, 3)
+//integer_in
+v = wr_reg (0x4dc, integer_N, 2)
+//rdiv
+v = wr_reg (0x4de, rdiv, 1)   //set ref div by rdiv
+//SD ref clock needs to be changed to feedback when rdiv is not 1
+if (rdiv > 1) then
+    sub_wr_ana(0xab, 0, 0, 0)
+endif
+
+//initialization sequence
+#clear tx related bits and set tx_pres_en
+v = wr_reg (0x4e8, 0, 1)
+sub_bit_set(0x4e8, 3)
+
+#clear Rx related bits
+v = wr_reg (0x4e9, 0, 1)
+#set rx_vco_enb
+sub_bit_set(0x4e9, 4)
+#set pd_div2_rx
+sub_bit_set(0x4e9, 5)
+
+#clear PLL control bits
+v = wr_reg (0x4ea, 0, 1)
+#set sd_intg_en
+sub_bit_set(0x4ea, 1)
+#set pd_intg_pll1
+sub_bit_set(0x4ea, 3)
+#set pd_intg_pll2
+sub_bit_set(0x4ea, 4)
+#set intg_div2_pd
+sub_bit_set(0x4ea, 5)
+#set enable peak detector power control
+sub_bit_set(0x4ea, 6)
+
+#clear PLL control bits
+v = wr_reg (0x4eb, 0, 1)
+#set enable RX always on mode
+sub_bit_set(0x4eb, 2)
+#set enable TX always on mode
+sub_bit_set(0x4eb, 3)
+#set enable manual mode
+sub_bit_set(0x4eb, 4)
+
+//1 set txcyc0 1
+sub_bit_set(0x4e8, 0)
+
+//2 set tpcyc 1
+sub_bit_set(0x4e9, 7)
+
+//3 tx_coarse_sof 1
+sub_bit_set(0x4e8, 1)
+
+//4 tx_coarse_sof 0
+sub_bit_clr(0x4e8, 1)
+
+//5 clear tp_cyc 0 to allow close loop locking
+sub_bit_clr(0x4e9, 7)
+
+if 1 then
+    //6 sd_resetb 1/ intg_en 0 for fractional mode
+    sub_bit_set(0x4ea, 0)
+    sub_bit_clr(0x4ea, 1)
+else
+    //6.a sd_resetb 0/intg_en 1 for integer mode
+    sub_bit_clr(0x4ea, 0)
+    sub_bit_set(0x4ea, 1)
+endif
+
+//7 txcyc1 1
+sub_bit_set(0x4e8, 2)

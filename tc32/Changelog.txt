@@ -1,0 +1,21 @@
+2011-05-24 Peter Shieh (peter.shieh@telink-semi.com)
+        * create installable program which install toolchain and samples
+        * add changelog to the install program
+2011-05-21 Peter Shieh (peter.shieh@telink-semi.com)
+        * revised new opecodes from mingjian. this is a full rebuild
+        * GDB not included, to be included in next release
+        * newlib not included. to be included later release
+
+2011-05-11 Peter Shieh (peter.shieh@telink-semi.com)
+        * replace /opt/tc32/tc32-elf/bin binary symbolic links with real exe
+        * add libiconv-2.dll into /opt/tc32/bin directory.  
+          This should be part of the MingW
+2011-05-11 Peter Shieh (peter.shieh@telink-semi.com)
+	* Initial release of TC32 1.0 alpha
+	* based on GCC 4.4.2, Binutils 2.20, gmp 4.3.1, mpfr 2.4.1
+        * newlib 1.18.0 to be released in next release
+        * integration with Eclipse IDE included
+        * gdb to be released in the future release
+        * sample program released alone with Eclipse
+        * Integrated installation/Windows Setup program to be released
+          in the future release

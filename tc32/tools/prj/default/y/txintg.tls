@@ -1,0 +1,70 @@
+#9/2/11, Script for testing integer PLL locking to frequencies of 16x
+#frequency in the 2.4Gz range
+////////////////////////////////////////////
+//      m/integer_N/fraction from freq
+////////////////////////////////////////////
+freq = p_get_size (0, 4)
+ref  = 16         // ref clock, default 16
+rdiv = 8          
+
+//Derive DPLL param
+m_mod = freq % ref // for dpll 
+m = (freq-m_mod) / ref /// for dpll
+
+//param for integer PLL, fvco = 16*8*N[9:0]/rdiv
+fmul = freq*rdiv
+integer_N_mod = fmul % (8*ref)
+integer_N = (fmul - integer_N_mod) / (8*ref)
+print integer_N, "\r"
+
+//analog
+spi_wr_reg (0xa9, 0xa1) //tx voc prescaler current: 8uA
+spi_wr_reg (0x06, 0x06) //pd
+spi_wr_reg (0x9d, 0x16) //pfd_s1, pfss0
+spi_wr_reg (0x9f, 0x0c) //cp_ise1_intg
+spi_wr_reg (0xaa, 0x81) //pd_intg_pll
+spi_wr_reg (0xac, m) //m(pll_dpll)
+spi_wr_reg (0x01, 0x14) //digital ldo to 1.9v
+spi_wr_reg (0x02, 0x87) //change analog ldo to 1.6v
+spi_wr_reg (0xa5, 0x2f) //change mux to 7
+spi_wr_reg (0xa0, 0x02) //dpll_en 0
+spi_wr_reg (0xa0, 0x03) //dpll_en 1
+
+//gpio20 input enable
+v = wr_reg (0x5b2, 0x00, 1)
+v = wr_reg (0x58a, 0x00, 1)
+
+#write N[9:0]
+high_N5 = integer_N >> 5
+low_N5 = integer_N - (high_N5 << 5)
+sub_wr_ana(0xa0, low_N5, 7, 3)
+sub_wr_ana(0xa1, high_N5, 4, 0)
+print high_N5, low_N5, "\r"
+
+#write intg_rdiv[5:0]
+sub_wr_ana(0xa2, rdiv, 5, 0)
+print rdiv, "\r"
+
+//initial
+#clear tx vco related settings
+v = wr_reg (0x4e8, 0, 1)
+#set pd_div2_tx
+sub_bit_set(0x4e8, 5)
+
+# clear rx vco related settings
+v = wr_reg(0x4e9, 0, 1)
+
+#clear sd and pll related settings
+v = wr_reg (0x4ea, 0x0, 1)
+#set pd_intg_pll2
+sub_bit_set(0x4ea, 4)
+
+#set enable_manual_mode, enable TX always on, enable RX always on
+v = wr_reg (0x4eb, 0x1c, 1)
+
+# set tx_coarse_sof 
+sub_bit_set(0x4e8, 1)
+# clear tx_coarse_sof
+sub_bit_clr(0x4e8, 1)
+
+

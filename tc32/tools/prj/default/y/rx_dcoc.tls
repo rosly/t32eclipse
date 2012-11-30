@@ -1,0 +1,50 @@
+sub sub_w3 (addr, d)
+	v = p_wr_reg (0xb8, addr, 1)	// analog register address
+	v = p_wr_reg (0xb9, d, 1)	// analog register address
+	v = p_wr_reg (0xba, 0x60, 1)	// analog register address
+endsub
+
+sub	dcoc_step (d)
+	wr_reg (0x426, 0x80, 1)
+	wr_reg (0x4cb, d, 1)
+	wr_reg (0x4cf, d, 1)
+	wr_reg (0x42f, 0x80, 1)
+	t = tick (1)
+	//while (tick (1) - t < 2)
+	//wend
+	rd_mem (0x42c, 0, 4)
+endsub
+	
+
+////////////////////////////////////////////
+//      get dc setting from (addr)
+////////////////////////////////////////////
+sub_w3 (0x91, 0x0b)		// turn on LNA
+mi = 0xffff
+mq = 0xffff
+ii = 0xff
+qi = 0xff
+for i=0 to 63 
+	dcoc_step (i)
+	dci = p_get_buf (0, 2)
+	dcq = p_get_buf (1, 2)
+	printx i, 1, '\t'
+	printx dci, 2, ' '
+	printx dcq, 2, ' '
+	print "\r\n"
+	if (dci < mi) then
+		mi = dci
+		ii = i
+	endif
+	if (dcq < mq) then
+		mq = dcq
+		qi = i
+	endif
+next i
+
+print "I " 
+printx ii, 1, ' '
+printx mi, 2, ' '
+print "\tQ " 
+printx qi, 1, ' '
+printx mq, 2, ' '
